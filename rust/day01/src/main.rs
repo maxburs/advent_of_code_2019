@@ -9,7 +9,7 @@ fn fuel_required(mass: i32) -> i32 {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    let file = fs::read_to_string("./day1.txt")?;
+    let file = fs::read_to_string("./input.txt")?;
 
     let fuel = file
       .split('\n')
