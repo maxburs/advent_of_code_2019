@@ -10,7 +10,7 @@ fn load() -> Result<Program, std::io::Error> {
         .map(|s| s.parse::<usize>().unwrap()).collect())
 }
 
-fn run(program: &mut Program) -> Result<(), std::io::Error> {
+fn run(mut program: Program) -> Program{
     let mut position = 0;
 
     loop {
@@ -26,7 +26,7 @@ fn run(program: &mut Program) -> Result<(), std::io::Error> {
                 let pos = program[position + 3];
                 program[pos] = val;
             },
-            99 => return Ok(()),
+            99 => return program,
             _ => panic!("Invalid value {} at position {}", value, position),
         }
         position += 4;
@@ -34,10 +34,18 @@ fn run(program: &mut Program) -> Result<(), std::io::Error> {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    let mut memory = load()?;
-    run(&mut memory)?;
-    println!("Position 0: {}", memory[0]);
+    let mut program = load()?;
+    program[1] = 12;
+    program[2] = 2;
+    let program = run(program);
+    println!("Position 0: {}", program[0]);
     Ok(())
 }
 
-
+#[test]
+fn tests() {
+    assert_eq!(run(vec![1,0,0,0,99]), vec![2,0,0,0,99]);
+    assert_eq!(run(vec![2,3,0,3,99]), vec![2,3,0,6,99]);
+    assert_eq!(run(vec![2,4,4,5,99,0]), vec![2,4,4,5,99,9801]);
+    assert_eq!(run(vec![1,1,1,4,99,5,6,0,99]), vec![30,1,1,4,2,5,6,0,99]);
+}
