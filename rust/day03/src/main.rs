@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fs;
 
 enum Direction {
     Right,
@@ -80,7 +81,15 @@ fn find_centermost_cross(wire1: WirePath, wire2: WirePath) -> Option<isize> {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let file = fs::read_to_string("./input.txt").unwrap();
+    let mut lines = file.lines();
+    let path1 = create_path(lines.next().unwrap());
+    let path2 = create_path(lines.next().unwrap());
+    let distance = find_centermost_cross(path1, path2);
+    match distance {
+        Some(distance) => println!("Distance: {}", distance),
+        None => println!("Failed to find distance"),
+    }
 }
 
 #[test]
