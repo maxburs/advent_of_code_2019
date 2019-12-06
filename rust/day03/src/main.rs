@@ -9,12 +9,12 @@ enum Direction {
 
 struct WireLine {
     direction: Direction,
-    lengh: isize,
+    length: isize,
 }
 
 type WirePath = Vec<WireLine>;
 
-#[derive(Hash,Clone,Eq,Debug)]
+#[derive(Hash, Clone, PartialEq, Eq, Debug)]
 struct Coordinate {
     x: isize,
     y: isize,
@@ -26,18 +26,17 @@ impl Coordinate {
     }
 }
 
-impl From<str> for WirePath {
-    fn from(raw: str) -> Self {
-        raw.split(',').map(|raw_line| WireLine {
-            direction: match raw_line[0] {
-                'R' => Direction::Right,
-                'L' => Direction::Left,
-                'U' => Direction::Up,
-                'D' => Direction::Down,
-            },
-            length: raw_line[1..].parse::<isize>(),
-        })
-    }
+fn create_path(raw: &str) -> WirePath {
+    raw.split(',').map(|raw_line| WireLine {
+        direction: match raw_line.chars().nth(0).unwrap() {
+            'R' => Direction::Right,
+            'L' => Direction::Left,
+            'U' => Direction::Up,
+            'D' => Direction::Down,
+            _ => panic!("Unexpectec character"),
+        },
+        length: raw_line[1..].parse::<isize>().unwrap(),
+    }).collect()
 }
 
 fn get_wire_coordinates(wire: &WirePath) -> HashSet<Coordinate> {
@@ -45,16 +44,16 @@ fn get_wire_coordinates(wire: &WirePath) -> HashSet<Coordinate> {
     let mut coordinate = Coordinate { x: 0, y: 0 };
 
     for line in wire {
-        let step = match line.direction {
-            Right => |&mut c| c.x += 1,
-            Down => |&mut c| c.y -= 1,
-            Up => |&mut c| c.y += 1,
-            Left => |&mut c| c.x -= 1,
+        let step: Box<dyn Fn(&mut Coordinate)> = match line.direction {
+            Direction::Right => Box::new(|c | c.x += 1),
+            Direction::Down => Box::new(|c | c.y -= 1),
+            Direction::Up => Box::new(|c | c.y += 1),
+            Direction::Left => Box::new(|c | c.x -= 1),
         };
 
-        for _ in [0..line.lengh] {
+        for _ in 0..line.length {
             step(&mut coordinate);
-            coordinates.add(coordinate.clone());
+            coordinates.insert(coordinate.clone());
         }
     }
     coordinates
@@ -71,7 +70,9 @@ fn find_centermost_cross(wire1: WirePath, wire2: WirePath) -> Option<isize> {
                 Some(closest) => closest > coordinate.distance(),
                 None => true,
             };
-            if replace { closest = Some(coordinate.distance()); }
+            if replace {
+                closest = Some(coordinate.distance());
+            }
         }
     }
 
@@ -85,13 +86,13 @@ fn main() {
 #[test]
 fn tests() {
     {
-        let path1 = WirePath::from("R75,D30,R83,U83,L12,D49,R71,U7,L72");
-        let path2 = WirePath::from("U62,R66,U55,R34,D71,R55,D58,R83");
-        assert_eq!(find_centermost_cross(path1, path2), 159);
+        let path1 = create_path("R75,D30,R83,U83,L12,D49,R71,U7,L72");
+        let path2 = create_path("U62,R66,U55,R34,D71,R55,D58,R83");
+        assert_eq!(find_centermost_cross(path1, path2).unwrap(), 159);
     }
     {
-        let path1 = WirePath::from("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51");
-        let path2 = WirePath::from("U98,R91,D20,R16,D67,R40,U7,R15,U6,R7");
-        assert_eq!(find_centermost_cross(path1, path2), 135);
+        let path1 = create_path("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51");
+        let path2 = create_path("U98,R91,D20,R16,D67,R40,U7,R15,U6,R7");
+        assert_eq!(find_centermost_cross(path1, path2).unwrap(), 135);
     }
 }
