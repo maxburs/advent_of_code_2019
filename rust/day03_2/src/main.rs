@@ -1,6 +1,5 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::fs;
-use std::iter::FromIterator;
 
 enum Direction {
     Right,
@@ -20,12 +19,6 @@ type WirePath = Vec<WireLine>;
 struct Coordinate {
     x: isize,
     y: isize,
-}
-
-impl Coordinate {
-    fn distance(&self) -> isize {
-        self.y.abs() + self.x.abs()
-    }
 }
 
 fn create_path(raw: &str) -> WirePath {
@@ -61,20 +54,28 @@ fn get_wire_coordinates(wire: &WirePath) -> Vec<Coordinate> {
     coordinates
 }
 
-fn find_centermost_cross(wire1: WirePath, wire2: WirePath) -> Option<isize> {
-    let mut closest: Option<isize> = None;
-    let wire1_coordinates: HashSet<Coordinate> = HashSet::from_iter(get_wire_coordinates(&wire1));
+fn find_centermost_cross(wire1: WirePath, wire2: WirePath) -> Option<usize> {
+    let mut closest: Option<usize> = None;
+    let mut wire1_coordinates = HashMap::new();
     let wire2_coordinates = get_wire_coordinates(&wire2);
 
-    for coordinate in wire2_coordinates {
-        if wire1_coordinates.contains(&coordinate) {
-            let replace = match closest {
-                Some(closest) => closest > coordinate.distance(),
-                None => true,
-            };
-            if replace {
-                closest = Some(coordinate.distance());
+    for (i, coordinate) in get_wire_coordinates(&wire1).into_iter().enumerate() {
+        wire1_coordinates.insert(coordinate, i + 1);
+    }
+
+    for (i, coordinate) in wire2_coordinates.iter().enumerate() {
+        match wire1_coordinates.get(&coordinate) {
+            Some(wire1_distance) => {
+                let distance = *wire1_distance + i + 1;
+                let replace = match closest {
+                    Some(closest) => closest > distance,
+                    None => true,
+                };
+                if replace {
+                    closest = Some(distance);
+                }
             }
+            None => (),
         }
     }
 
@@ -98,11 +99,11 @@ fn tests() {
     {
         let path1 = create_path("R75,D30,R83,U83,L12,D49,R71,U7,L72");
         let path2 = create_path("U62,R66,U55,R34,D71,R55,D58,R83");
-        assert_eq!(find_centermost_cross(path1, path2).unwrap(), 159);
+        assert_eq!(find_centermost_cross(path1, path2).unwrap(), 610);
     }
     {
         let path1 = create_path("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51");
         let path2 = create_path("U98,R91,D20,R16,D67,R40,U7,R15,U6,R7");
-        assert_eq!(find_centermost_cross(path1, path2).unwrap(), 135);
+        assert_eq!(find_centermost_cross(path1, path2).unwrap(), 410);
     }
 }
