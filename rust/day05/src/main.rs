@@ -27,9 +27,9 @@ impl InstructionArguments<'_> {
 fn find_mode(opcode: isize, position: usize) -> ParameterMode {
     let mut opcode: Vec<char> = opcode.to_string().chars().into_iter().collect();
     opcode.reverse();
-    match opcode[position + 1] {
-        '0' => ParameterMode::Position,
-        '1' => ParameterMode::Immediate,
+    match opcode.get(position + 1) {
+        None | Some('0') => ParameterMode::Position,
+        Some('1') => ParameterMode::Immediate,
         _ => panic!("Invalid mode for {:#?} at position {}", opcode, position),
     }
 }
@@ -116,10 +116,10 @@ fn main() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-// #[test]
-// fn tests() {
-//     assert_eq!(run(vec![1,0,0,0,99]).unwrap(), vec![2,0,0,0,99]);
-//     assert_eq!(run(vec![2,3,0,3,99]).unwrap(), vec![2,3,0,6,99]);
-//     assert_eq!(run(vec![2,4,4,5,99,0]).unwrap(), vec![2,4,4,5,99,9801]);
-//     assert_eq!(run(vec![1,1,1,4,99,5,6,0,99]).unwrap(), vec![30,1,1,4,2,5,6,0,99]);
-// }
+#[test]
+fn tests() {
+    assert_eq!(run(vec![1,0,0,0,99]).unwrap(), vec![2,0,0,0,99]);
+    assert_eq!(run(vec![2,3,0,3,99]).unwrap(), vec![2,3,0,6,99]);
+    assert_eq!(run(vec![2,4,4,5,99,0]).unwrap(), vec![2,4,4,5,99,9801]);
+    assert_eq!(run(vec![1,1,1,4,99,5,6,0,99]).unwrap(), vec![30,1,1,4,2,5,6,0,99]);
+}
