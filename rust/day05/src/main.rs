@@ -46,24 +46,31 @@ fn find_mode_tests() {
 
 fn add(args: InstructionArguments<'_>, _input: &mut Vec<isize>, _output: &mut Vec<isize>) {
     let val = args.param(1) + args.param(2);
+    println!("{} = {} + {}", val, args.param(1), args.param(2));
+    println!("{}", "-".repeat(20));
     let pos = args.memory[args.instruction_pointer + 3];
     args.memory[pos as usize] = val;
 }
 
 fn multiply(args: InstructionArguments<'_>, _input: &mut Vec<isize>, _output: &mut Vec<isize>) {
     let val = args.param(1) * args.param(2);
+    println!("{} = {} * {}", val, args.param(1), args.param(2));
+    println!("{}", "-".repeat(20));
     let pos = args.memory[args.instruction_pointer + 3];
     args.memory[pos as usize] = val;
 }
 
 fn read_input(args: InstructionArguments<'_>, input: &mut Vec<isize>, _output: &mut Vec<isize>) {
     let val = input.pop().unwrap();
-    let pos = args.memory[args.instruction_pointer + 1];
+    let pos = args.memory[args.param(1) as usize];
     args.memory[pos as usize] = val;
 }
 
 fn print_output(args: InstructionArguments<'_>, _input: &mut Vec<isize>, output: &mut Vec<isize>) {
-    output.push(args.memory[args.instruction_pointer + 1]);
+    output.push(args.memory[args.param(1) as usize]);
+    // if args.memory[args.param(1) as usize] != 0 {
+    //     panic!("exiting early with output: {:?}", output);
+    // }
 }
 
 fn load() -> Result<Memory, std::io::Error> {
@@ -75,38 +82,57 @@ fn load() -> Result<Memory, std::io::Error> {
         .collect())
 }
 
-fn run(memory: &mut Memory, mut input: Vec<isize>) -> Vec<isize>{
+fn run(memory: &mut Memory, mut input: Vec<isize>) -> (Vec<isize>, Result<(), std::io::Error>) {
     let mut instruction_pointer = 0;
-
     let mut output = Vec::new();
 
     loop {
+        println!("{:?}", memory);
+        println!("{}", "-".repeat(20));
         let opcode = memory[instruction_pointer] % 100;
-        let (instruction, values_in_instruction): (Box<dyn Fn(InstructionArguments<'_>, &mut Vec<isize>, &mut Vec<isize>)>, usize) =
-            match opcode {
-                1 => (Box::new(&add), 4),
-                2 => (Box::new(&multiply), 4),
-                3 => (Box::new(&read_input), 2),
-                4 => (Box::new(&print_output), 2),
-                99 => return output,
-                _ => panic!(
+        let (instruction, values_in_instruction): (
+            Box<dyn Fn(InstructionArguments<'_>, &mut Vec<isize>, &mut Vec<isize>)>,
+            usize,
+        ) = match opcode {
+            1 => (Box::new(&add), 4),
+            2 => (Box::new(&multiply), 4),
+            3 => (Box::new(&read_input), 2),
+            4 => (Box::new(&print_output), 2),
+            99 => return (output, Ok(())),
+            _ => {
+                return (output, Err(std::io::Error::new(std::io::ErrorKind::Other, format!(
                     "Invalid opcode {} at instruction_pointer {}",
                     opcode, instruction_pointer
-                ),
-            };
-        instruction(InstructionArguments {
-            memory,
-            instruction_pointer,
-        }, &mut input, &mut output);
+                ))))
+            }
+        };
+        println!(
+            "Running: {:?}",
+            &memory[instruction_pointer..(instruction_pointer + values_in_instruction)]
+        );
+        println!("{}", "-".repeat(20));
+        instruction(
+            InstructionArguments {
+                memory,
+                instruction_pointer,
+            },
+            &mut input,
+            &mut output,
+        );
         instruction_pointer += values_in_instruction;
     }
 }
 
 fn main() -> Result<(), std::io::Error> {
     let mut memory = load()?;
-    let output = run(&mut memory, vec![1]);
-    println!("Ouputput: {:#?}", output);
-    Ok(())
+    let (output, err) = run(&mut memory, vec![1]);
+
+    println!("Output: {:#?}", output);
+    if let Ok(()) = err {
+        println!("Success");
+    }
+
+    return err;
 }
 
 #[test]
